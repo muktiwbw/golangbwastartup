@@ -18,7 +18,8 @@ func main() {
 		log.Fatal(err.Error())
 	}
 
-	log.Println("Connection to database is established.")
+	// log.Println("Connection to database is established.")
+	log.Println("Connected to database.")
 
 	userRepository := user.NewRepository(db)
 	userService := user.NewService(userRepository)
@@ -27,7 +28,8 @@ func main() {
 	router := gin.Default()
 	api := router.Group("/api/v1")
 
-	api.POST("/users", userHandler.RegisterUser)
+	api.POST("/register", userHandler.RegisterUser)
+	api.POST("/login", userHandler.LoginUser)
 
 	router.Run()
 

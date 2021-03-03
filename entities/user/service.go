@@ -1,6 +1,7 @@
 package user
 
 import (
+	"errors"
 	"time"
 
 	"golang.org/x/crypto/bcrypt"
@@ -8,6 +9,7 @@ import (
 
 type Service interface {
 	RegisterUser(input RegisterUserInput) (User, error)
+	LoginUser(input LoginUserInput) (User, error)
 }
 
 type service struct {
@@ -44,8 +46,26 @@ func (s *service) RegisterUser(input RegisterUserInput) (User, error) {
 	// ===================== Save User Data =====================
 
 	if err != nil {
-		return nu, err
+		return nu, errors.New("Terjadi kesalahan ketika menyimpan data.")
 	}
 
 	return nu, nil
+}
+
+func (s *service) LoginUser(input LoginUserInput) (User, error) {
+	// call Login repository
+	authenticatedUser, err := s.repository.FindByEmail(input.Email)
+
+	if err != nil {
+		return authenticatedUser, err
+	}
+
+	err = bcrypt.CompareHashAndPassword([]byte(authenticatedUser.Password), []byte(input.Password))
+
+	if err != nil {
+		// Sengaja dijadikan sama dengan "email not found" supaya user tidak tau mana yang salah
+		return authenticatedUser, errors.New("Email atau password salah.")
+	}
+
+	return authenticatedUser, nil
 }
