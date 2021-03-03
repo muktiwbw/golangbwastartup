@@ -70,3 +70,31 @@ func (h *userHandler) LoginUser(c *gin.Context) {
 
 	c.JSON(http.StatusOK, user.FormatUser(authenticatedUser, "superSecureToken"))
 }
+
+func (h *userHandler) CheckEmailAvailability(c *gin.Context) {
+	var input user.CheckEmailAvailabilityInput
+
+	err := c.ShouldBindJSON(&input)
+
+	if err != nil {
+		c.JSON(http.StatusUnprocessableEntity, helpers.APIResponse("Terdapat kesalahan input data", http.StatusUnprocessableEntity, "error", helpers.GetValidationErrors(err)))
+
+		return
+	}
+
+	isAvailable, err := h.userService.EmailIsAvailable(input)
+
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, helpers.APIResponse("Terdapat kesalahan input data", http.StatusInternalServerError, "error", gin.H{"error": err.Error()}))
+
+		return
+	}
+
+	if isAvailable {
+		c.JSON(http.StatusOK, helpers.APIResponse("Email tersedia.", http.StatusOK, "ok", nil))
+
+		return
+	}
+
+	c.JSON(http.StatusOK, helpers.APIResponse("Email tidak tersedia.", http.StatusOK, "fail", nil))
+}
