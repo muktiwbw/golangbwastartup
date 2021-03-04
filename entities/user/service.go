@@ -2,8 +2,11 @@ package user
 
 import (
 	"errors"
+	"fmt"
+	"path/filepath"
 	"time"
 
+	"github.com/gin-gonic/gin"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -11,6 +14,7 @@ type Service interface {
 	RegisterUser(input RegisterUserInput) (User, error)
 	LoginUser(input LoginUserInput) (User, error)
 	EmailIsAvailable(input CheckEmailAvailabilityInput) (bool, error)
+	SaveImage(c *gin.Context, field string, dir string) (User, error)
 }
 
 type service struct {
@@ -83,4 +87,37 @@ func (s *service) EmailIsAvailable(input CheckEmailAvailabilityInput) (bool, err
 	}
 
 	return false, nil
+}
+
+func (s *service) SaveImage(c *gin.Context, field string, dir string) (User, error) {
+	userId := 6
+	foundUser, err := s.repository.FindByID(userId)
+
+	// Mendapatkan input file
+	file, err := c.FormFile(field)
+
+	if err != nil {
+		return foundUser, err
+	}
+
+	// Upload file ke server
+	fileExt := filepath.Ext(file.Filename)
+	path := filepath.Join("images", dir, fmt.Sprintf("ava-%d%s", userId, fileExt))
+
+	err = c.SaveUploadedFile(file, path)
+
+	if err != nil {
+		return foundUser, err
+	}
+
+	// Update avatar to db
+	foundUser.Avatar = path
+	foundUser, err = s.repository.Update(foundUser)
+
+	if err != nil {
+		return foundUser, err
+	}
+
+	return foundUser, nil
+
 }

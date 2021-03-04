@@ -98,3 +98,16 @@ func (h *userHandler) CheckEmailAvailability(c *gin.Context) {
 
 	c.JSON(http.StatusOK, helpers.APIResponse("Email tidak tersedia.", http.StatusOK, "fail", nil))
 }
+
+func (h *userHandler) UpdateAvatar(c *gin.Context) {
+	updatedUser, err := h.userService.SaveImage(c, "avatar", "users")
+
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, helpers.APIResponse("Tidak dapat menyimpan file", http.StatusInternalServerError, "error", gin.H{"error": err.Error()}))
+
+		return
+	}
+
+	c.JSON(http.StatusOK, helpers.APIResponse("Sukses menyimpan foto", http.StatusOK, "success", user.FormatUser(updatedUser, "secureAccessToken")))
+
+}
