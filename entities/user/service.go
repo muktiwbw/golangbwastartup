@@ -2,19 +2,17 @@ package user
 
 import (
 	"errors"
-	"fmt"
-	"path/filepath"
 	"time"
 
-	"github.com/gin-gonic/gin"
 	"golang.org/x/crypto/bcrypt"
 )
 
 type Service interface {
+	GetUserByID(user_id int) (User, error)
 	RegisterUser(input RegisterUserInput) (User, error)
 	LoginUser(input LoginUserInput) (User, error)
 	EmailIsAvailable(input CheckEmailAvailabilityInput) (bool, error)
-	SaveImage(c *gin.Context, field string, dir string) (User, error)
+	UpdateAvatar(user User, fullDir string) (User, error)
 }
 
 type service struct {
@@ -23,6 +21,16 @@ type service struct {
 
 func NewService(repository Repository) Service {
 	return &service{repository}
+}
+
+func (s *service) GetUserByID(user_id int) (User, error) {
+	foundUser, err := s.repository.FindByID(user_id)
+
+	if err != nil {
+		return foundUser, err
+	}
+
+	return foundUser, nil
 }
 
 func (s *service) RegisterUser(input RegisterUserInput) (User, error) {
@@ -89,35 +97,16 @@ func (s *service) EmailIsAvailable(input CheckEmailAvailabilityInput) (bool, err
 	return false, nil
 }
 
-func (s *service) SaveImage(c *gin.Context, field string, dir string) (User, error) {
-	userId := 6
-	foundUser, err := s.repository.FindByID(userId)
-
-	// Mendapatkan input file
-	file, err := c.FormFile(field)
-
-	if err != nil {
-		return foundUser, err
-	}
-
-	// Upload file ke server
-	fileExt := filepath.Ext(file.Filename)
-	path := filepath.Join("images", dir, fmt.Sprintf("ava-%d%s", userId, fileExt))
-
-	err = c.SaveUploadedFile(file, path)
-
-	if err != nil {
-		return foundUser, err
-	}
-
+// args: file, fullDir
+func (s *service) UpdateAvatar(user User, fullDir string) (User, error) {
 	// Update avatar to db
-	foundUser.Avatar = path
-	foundUser, err = s.repository.Update(foundUser)
+	user.Avatar = fullDir
+	updatedUser, err := s.repository.Update(user)
 
 	if err != nil {
-		return foundUser, err
+		return updatedUser, err
 	}
 
-	return foundUser, nil
+	return updatedUser, nil
 
 }

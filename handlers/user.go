@@ -1,20 +1,25 @@
 package handlers
 
 import (
+	"bwastartup/auth"
 	"bwastartup/entities/user"
 	"bwastartup/helpers"
+	"fmt"
 	"net/http"
+	"path"
+	"path/filepath"
 
 	"github.com/gin-gonic/gin"
 )
 
 type userHandler struct {
 	userService user.Service
+	authService auth.Service
 }
 
 // New UserHandler => Instanciate new UserHandler object
-func NewUserHandler(userService user.Service) *userHandler {
-	return &userHandler{userService}
+func NewUserHandler(userService user.Service, authService auth.Service) *userHandler {
+	return &userHandler{userService, authService}
 }
 
 func (h *userHandler) RegisterUser(c *gin.Context) {
@@ -40,7 +45,16 @@ func (h *userHandler) RegisterUser(c *gin.Context) {
 		return
 	}
 
-	data := helpers.APIResponse("User telah didaftarkan", 201, "created", user.FormatUser(newUser, "secureAccessToken"))
+	// Generate access token
+	accessToken, err := h.authService.GenerateToken(newUser.ID)
+
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, helpers.APIResponse("Terjadi kesalahan pada server", http.StatusInternalServerError, "error", gin.H{"error": err.Error()}))
+
+		return
+	}
+
+	data := helpers.APIResponse("User telah didaftarkan", 201, "created", user.FormatUser(newUser, accessToken))
 
 	c.JSON(http.StatusOK, data)
 }
@@ -68,7 +82,16 @@ func (h *userHandler) LoginUser(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, user.FormatUser(authenticatedUser, "superSecureToken"))
+	token, err := h.authService.GenerateToken(authenticatedUser.ID)
+
+	if err != nil {
+		data := helpers.APIResponse("Terdapat kesalahan membuat token", http.StatusInternalServerError, "error", gin.H{"error": err.Error()})
+		c.JSON(http.StatusInternalServerError, data)
+
+		return
+	}
+
+	c.JSON(http.StatusOK, user.FormatUser(authenticatedUser, token))
 }
 
 func (h *userHandler) CheckEmailAvailability(c *gin.Context) {
@@ -100,7 +123,28 @@ func (h *userHandler) CheckEmailAvailability(c *gin.Context) {
 }
 
 func (h *userHandler) UpdateAvatar(c *gin.Context) {
-	updatedUser, err := h.userService.SaveImage(c, "avatar", "users")
+
+	file, err := c.FormFile("avatar")
+
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, helpers.APIResponse("Tidak dapat menyimpan file", http.StatusInternalServerError, "error", gin.H{"error": err.Error()}))
+
+		return
+	}
+
+	authUser := c.MustGet("authUser").(user.User)
+	fileExt := filepath.Ext(file.Filename)
+	fullDir := path.Join("images", "users", fmt.Sprintf("ava-%d%s", authUser.ID, fileExt))
+
+	err = c.SaveUploadedFile(file, fullDir)
+
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, helpers.APIResponse("Tidak dapat menyimpan file", http.StatusInternalServerError, "error", gin.H{"error": err.Error()}))
+
+		return
+	}
+
+	updatedUser, err := h.userService.UpdateAvatar(authUser, fullDir)
 
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, helpers.APIResponse("Tidak dapat menyimpan file", http.StatusInternalServerError, "error", gin.H{"error": err.Error()}))
