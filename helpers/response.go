@@ -12,8 +12,8 @@ type Meta struct {
 }
 
 type Response struct {
-	Meta Meta
-	Data interface{}
+	Meta Meta        `json:"meta"`
+	Data interface{} `json:"data"`
 }
 
 func APIResponse(message string, code int, status string, data interface{}) Response {

@@ -3,6 +3,7 @@ package main
 import (
 	"bwastartup/auth"
 	"bwastartup/entities/campaign"
+	"bwastartup/entities/transaction"
 	"bwastartup/entities/user"
 	"bwastartup/handlers"
 	"bwastartup/helpers"
@@ -30,27 +31,49 @@ func main() {
 
 	userRepository := user.NewRepository(db)
 	campaignRepository := campaign.NewRepository(db)
+	transactionRepository := transaction.NewRepository(db)
 
 	userService := user.NewService(userRepository)
 	authService := auth.NewService()
 	campaignService := campaign.NewService(campaignRepository)
+	transactionService := transaction.NewService(transactionRepository)
 
 	userHandler := handlers.NewUserHandler(userService, authService)
 	campaignHandler := handlers.NewCampaignHandler(campaignService)
+	transactionHandler := handlers.NewTransactionHandler(transactionService, campaignService)
 
 	router := gin.Default()
 	api := router.Group("/api/v1")
 
+	// ================================================================================================================
+	// == ALIGNED ENDPOINTS ===========================================================================================
+	// ================================================================================================================
+
+	// Users & Auth
 	api.POST("/register", userHandler.RegisterUser)
 	api.POST("/login", userHandler.LoginUser)
-	api.POST("/emailCheck", userHandler.CheckEmailAvailability)
-	api.POST("/updateAvatar", authorize(authService, userService), userHandler.UpdateAvatar)
+	api.POST("/email-check", userHandler.CheckEmailAvailability)
+	api.POST("/update-avatar", authorize(authService, userService), userHandler.UpdateAvatar)
+	api.GET("/me/fetch", authorize(authService, userService), userHandler.FetchCurrentUser)
 
-	api.GET("/me/campaigns", authorize(authService, userService), campaignHandler.GetOwnCampaigns)
-
+	// Campaign & Transactions
+	api.POST("/campaigns", authorize(authService, userService), campaignHandler.CreateCampaign)
+	api.POST("/campaigns/:campaign_id/images", authorize(authService, userService), campaignHandler.CreateCampaignImages)
+	api.POST("/campaigns/:campaign_id/back", authorize(authService, userService), transactionHandler.CreateTransaction)
+	api.PATCH("/campaigns/:campaign_id", authorize(authService, userService), campaignHandler.UpdateCampaign)
 	api.GET("/campaigns", campaignHandler.GetAllCampaigns)
 	api.GET("/campaigns/:campaign_id", campaignHandler.GetCampaignByID)
+	api.GET("/campaigns/:campaign_id/transactions", transactionHandler.GetTransactionByCampaignID)
+	api.GET("/me/transactions", authorize(authService, userService), transactionHandler.GetOwnTransactions)
 
+	// ================================================================================================================
+	// ================================================================================================================
+
+	api.GET("/me/campaigns", authorize(authService, userService), campaignHandler.GetOwnCampaigns)
+	api.DELETE("/campaigns/:campaign_id", authorize(authService, userService), campaignHandler.DeleteCampaign)
+	api.GET("/transactions", authorize(authService, userService), transactionHandler.GetAllTransactions)
+	api.GET("/transactions/:transaction_id", authorize(authService, userService), transactionHandler.GetTransactionByID)
+	api.PUT("/transactions/:transaction_id/verify", authorize(authService, userService), transactionHandler.VerifyTransaction)
 	router.Run()
 
 }

@@ -91,7 +91,7 @@ func (h *userHandler) LoginUser(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, user.FormatUser(authenticatedUser, token))
+	c.JSON(http.StatusOK, helpers.APIResponse("Berhasil login", http.StatusOK, "success", user.FormatUser(authenticatedUser, token)))
 }
 
 func (h *userHandler) CheckEmailAvailability(c *gin.Context) {
@@ -114,12 +114,12 @@ func (h *userHandler) CheckEmailAvailability(c *gin.Context) {
 	}
 
 	if isAvailable {
-		c.JSON(http.StatusOK, helpers.APIResponse("Email tersedia.", http.StatusOK, "ok", nil))
+		c.JSON(http.StatusOK, helpers.APIResponse("Email dapat digunakan.", http.StatusOK, "ok", gin.H{"is_available": true}))
 
 		return
 	}
 
-	c.JSON(http.StatusOK, helpers.APIResponse("Email tidak tersedia.", http.StatusOK, "fail", nil))
+	c.JSON(http.StatusOK, helpers.APIResponse("Email telah digunakan.", http.StatusOK, "fail", gin.H{"is_available": false}))
 }
 
 func (h *userHandler) UpdateAvatar(c *gin.Context) {
@@ -144,14 +144,20 @@ func (h *userHandler) UpdateAvatar(c *gin.Context) {
 		return
 	}
 
-	updatedUser, err := h.userService.UpdateAvatar(authUser, fullDir)
+	_, err = h.userService.UpdateAvatar(authUser, fullDir)
 
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, helpers.APIResponse("Tidak dapat menyimpan file", http.StatusInternalServerError, "error", gin.H{"error": err.Error()}))
+		c.JSON(http.StatusInternalServerError, helpers.APIResponse("Tidak dapat menyimpan file", http.StatusInternalServerError, "fail", gin.H{"is_uploaded": false}))
 
 		return
 	}
 
-	c.JSON(http.StatusOK, helpers.APIResponse("Sukses menyimpan foto", http.StatusOK, "success", user.FormatUser(updatedUser, "secureAccessToken")))
+	c.JSON(http.StatusOK, helpers.APIResponse("Sukses menyimpan foto", http.StatusOK, "ok", gin.H{"is_uploaded": true, "filename": fullDir}))
 
+}
+
+func (h *userHandler) FetchCurrentUser(c *gin.Context) {
+	authUser := c.MustGet("authUser").(user.User)
+
+	c.JSON(http.StatusOK, helpers.APIResponse("Successfully fetch user data", http.StatusOK, "success", user.FormatUser(authUser, "")))
 }
