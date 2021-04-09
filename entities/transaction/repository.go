@@ -1,6 +1,10 @@
 package transaction
 
-import "gorm.io/gorm"
+import (
+	"fmt"
+
+	"gorm.io/gorm"
+)
 
 type Repository interface {
 	Save(transaction Transaction) (Transaction, error)
@@ -8,6 +12,7 @@ type Repository interface {
 	AllByRef(id int, field string) ([]Transaction, error)
 	Get(id int) (Transaction, error)
 	Verify(transaction Transaction) (Transaction, error)
+	CalculateCampaignStats(campaignID int) (currentAmount int, backerCount int64, err error)
 }
 
 type repository struct {
@@ -79,4 +84,27 @@ func (r *repository) Verify(transaction Transaction) (Transaction, error) {
 	}
 
 	return transaction, nil
+}
+
+func (r *repository) CalculateCampaignStats(campaignID int) (currentAmount int, backerCount int64, err error) {
+	err = r.db.Model(&Transaction{}).Where("campaign_id = ?", campaignID).Count(&backerCount).Error
+
+	if err != nil {
+		return currentAmount, backerCount, err
+	}
+
+	var trx Transaction
+
+	err = r.db.Model(&Transaction{}).Where("campaign_id = ?", campaignID).Select("sum(amount) as amount").Scan(&trx).Error
+
+	if err != nil {
+		return currentAmount, backerCount, err
+	}
+
+	currentAmount = trx.Amount
+
+	fmt.Printf("Current amount: %d\nBacker count: %d\n", currentAmount, backerCount)
+
+	return currentAmount, backerCount, nil
+
 }

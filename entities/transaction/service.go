@@ -10,6 +10,7 @@ type Service interface {
 	GetAllTransactionsByRef(id int, field string) ([]Transaction, error)
 	GetTransactionByID(id int) (Transaction, error)
 	VerifyTransaction(transaction Transaction) (Transaction, error)
+	GetNewCampaignStats(campaignID int) (currentAmount int, backerCount int64, err error)
 }
 
 type service struct {
@@ -81,4 +82,14 @@ func (s *service) VerifyTransaction(transaction Transaction) (Transaction, error
 	}
 
 	return verifiedTransaction, nil
+}
+
+func (s *service) GetNewCampaignStats(campaignID int) (currentAmount int, backerCount int64, err error) {
+	currentAmount, backerCount, err = s.repository.CalculateCampaignStats(campaignID)
+
+	if err != nil {
+		return currentAmount, backerCount, err
+	}
+
+	return currentAmount, backerCount, nil
 }

@@ -66,6 +66,17 @@ func (h transactionHandler) CreateTransaction(c *gin.Context) {
 		return
 	}
 
+	// Calculate and update campaign stats
+	currentAmount, backerCount, err := h.transactionService.GetNewCampaignStats(foundCampaign.ID)
+
+	_, err = h.campaignService.UpdateCampaign(foundCampaign, campaign.UpdateCampaignInput{CurrentAmount: currentAmount, BackersCount: backerCount})
+
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, helpers.APIResponse("Terjadi kesalahan pada server", http.StatusInternalServerError, "error", gin.H{"error": err.Error()}))
+
+		return
+	}
+
 	c.JSON(http.StatusCreated, helpers.APIResponse("Successfully created a transaction", http.StatusCreated, "created", transaction.FormatTransaction(createdTransaction)))
 
 }
@@ -198,4 +209,24 @@ func (h transactionHandler) VerifyTransaction(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusCreated, helpers.APIResponse("Successfully verified transaction", http.StatusCreated, "updated", transaction.FormatTransaction(verifiedTransaction)))
+}
+
+func (h *transactionHandler) GetNewCampaignStats(c *gin.Context) {
+	var campaignInput campaign.GetCampaignByIDInput
+
+	err := c.ShouldBindUri(&campaignInput)
+
+	if err != nil {
+		c.JSON(http.StatusBadRequest, helpers.APIResponse("Kesalahan pada input campaign ID", http.StatusBadRequest, "error", helpers.GetValidationErrors(err)))
+
+		return
+	}
+
+	_, _, err = h.transactionService.GetNewCampaignStats(campaignInput.ID)
+
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, helpers.APIResponse("Terjadi kesalahan pada server", http.StatusInternalServerError, "error", gin.H{"error": err.Error()}))
+
+		return
+	}
 }

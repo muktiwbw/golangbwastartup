@@ -54,10 +54,10 @@ func (h campaignHandler) GetOwnCampaigns(c *gin.Context) {
 		return
 	}
 
-	formattedCampaigns := []campaign.CampaignFormat{}
+	formattedCampaigns := []campaign.CampaignThumbnailFormat{}
 
 	for _, cmp := range campaigns {
-		formattedCampaigns = append(formattedCampaigns, campaign.FormatCampaign(cmp))
+		formattedCampaigns = append(formattedCampaigns, campaign.FormatCampaignThumbnail(cmp))
 	}
 
 	c.JSON(http.StatusOK, helpers.APIResponse("Ok", http.StatusOK, "success", formattedCampaigns))
@@ -248,6 +248,8 @@ func (h campaignHandler) CreateCampaignImages(c *gin.Context) {
 
 	images := form.File["images"]
 	coverIndex, err := strconv.Atoi(form.Value["cover_index"][0])
+	// fmt.Println(images, coverIndex)
+	// fmt.Println(c.FullPath())
 
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, helpers.APIResponse("Terjadi kesalahan pada server", http.StatusInternalServerError, "error", gin.H{"error": err.Error()}))
@@ -260,7 +262,9 @@ func (h campaignHandler) CreateCampaignImages(c *gin.Context) {
 UploadImageLoop:
 	for i, image := range images {
 		fileExt := filepath.Ext(image.Filename)
-		fullDir := path.Join("images", "campaigns", fmt.Sprintf("img-%d-%d%s", foundCampaign.ID, i+1, fileExt))
+		fileTimestamp := time.Now().UnixNano()
+		fileName := fmt.Sprintf("img-%d-%d%s", foundCampaign.ID, fileTimestamp, fileExt)
+		fullDir := path.Join("images", "campaigns", fileName)
 
 		err := c.SaveUploadedFile(image, fullDir)
 
@@ -270,13 +274,13 @@ UploadImageLoop:
 
 		campaignImage := campaign.CampaignImage{
 			CampaignID: foundCampaign.ID,
-			Filename:   fullDir,
+			Filename:   fileName,
 			IsCover:    false,
 			CreatedAt:  time.Now(),
 			UpdatedAt:  time.Now(),
 		}
 
-		if coverIndex == i+1 {
+		if coverIndex == i {
 			campaignImage.IsCover = true
 		}
 

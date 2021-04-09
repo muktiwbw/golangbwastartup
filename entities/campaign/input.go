@@ -14,10 +14,12 @@ type CreateCampaignInput struct {
 }
 
 type UpdateCampaignInput struct {
-	ID          int
-	Name        string `json:"name"`
-	Highlight   string `json:"highlight"`
-	Description string `json:"description"`
-	GoalAmount  int    `json:"goal_amount"`
-	Perks       string `json:"perks"`
+	ID            int
+	Name          string `json:"name"`
+	Highlight     string `json:"highlight"`
+	Description   string `json:"description"`
+	GoalAmount    int    `json:"goal_amount"`
+	Perks         string `json:"perks"`
+	CurrentAmount int
+	BackersCount  int64
 }

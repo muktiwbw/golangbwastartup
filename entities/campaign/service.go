@@ -81,12 +81,14 @@ func (s *service) CreateCampaign(input CreateCampaignInput) (Campaign, error) {
 
 func (s *service) UpdateCampaign(campaign Campaign, updateValues UpdateCampaignInput) (Campaign, error) {
 	newValuesCampaign := Campaign{
-		Name:        updateValues.Name,
-		Highlight:   updateValues.Highlight,
-		Description: updateValues.Description,
-		GoalAmount:  updateValues.GoalAmount,
-		Perks:       updateValues.Perks,
-		UpdatedAt:   time.Now(),
+		Name:          updateValues.Name,
+		Highlight:     updateValues.Highlight,
+		Description:   updateValues.Description,
+		GoalAmount:    updateValues.GoalAmount,
+		Perks:         updateValues.Perks,
+		UpdatedAt:     time.Now(),
+		CurrentAmount: updateValues.CurrentAmount,
+		BackersCount:  int(updateValues.BackersCount),
 	}
 
 	updatedCampaign, err := s.repository.Update(campaign, newValuesCampaign)
@@ -112,6 +114,12 @@ func (s *service) CreateCampaignImages(images []CampaignImage) ([]CampaignImage,
 	var err error = nil
 
 	createdImages := []CampaignImage{}
+
+	err = s.repository.ResetCampaignImageCover(images[0].CampaignID)
+
+	if err != nil {
+		return createdImages, err
+	}
 
 SavingEachImage: // It's a looping label, later useful for breaking out of a loop
 	for _, image := range images {

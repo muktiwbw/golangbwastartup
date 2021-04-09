@@ -39,7 +39,6 @@ func (s *service) RegisterUser(input RegisterUserInput) (User, error) {
 	u.Name = input.Name
 	u.Email = input.Email
 	u.Occupation = input.Occupation
-	u.Avatar = "default.jpg"
 	u.Role = "user"
 	u.CreatedAt = time.Now()
 	u.UpdatedAt = time.Now()
@@ -97,10 +96,10 @@ func (s *service) EmailIsAvailable(input CheckEmailAvailabilityInput) (bool, err
 	return false, nil
 }
 
-// args: file, fullDir
-func (s *service) UpdateAvatar(user User, fullDir string) (User, error) {
+// args: file, fileName
+func (s *service) UpdateAvatar(user User, fileName string) (User, error) {
 	// Update avatar to db
-	user.Avatar = fullDir
+	user.Avatar = fileName
 	updatedUser, err := s.repository.Update(user)
 
 	if err != nil {

@@ -13,6 +13,7 @@ import (
 	"strings"
 
 	"github.com/dgrijalva/jwt-go"
+	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
@@ -43,6 +44,17 @@ func main() {
 	transactionHandler := handlers.NewTransactionHandler(transactionService, campaignService)
 
 	router := gin.Default()
+
+	// CORS
+	corsConfig := cors.DefaultConfig()
+	corsConfig.AllowOrigins = []string{"http://127.0.0.1:3000"}
+	corsConfig.AllowMethods = []string{"GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"}
+	corsConfig.AllowHeaders = []string{"Authorization", "Content-Type"}
+	router.Use(cors.New(corsConfig))
+
+	// STATIC FILES
+	router.Static("/images", "./images")
+
 	api := router.Group("/api/v1")
 
 	// ================================================================================================================
@@ -65,15 +77,18 @@ func main() {
 	api.GET("/campaigns/:campaign_id", campaignHandler.GetCampaignByID)
 	api.GET("/campaigns/:campaign_id/transactions", transactionHandler.GetTransactionByCampaignID)
 	api.GET("/me/transactions", authorize(authService, userService), transactionHandler.GetOwnTransactions)
-
-	// ================================================================================================================
-	// ================================================================================================================
-
 	api.GET("/me/campaigns", authorize(authService, userService), campaignHandler.GetOwnCampaigns)
+
+	// ================================================================================================================
+	// ================================================================================================================
+
 	api.DELETE("/campaigns/:campaign_id", authorize(authService, userService), campaignHandler.DeleteCampaign)
 	api.GET("/transactions", authorize(authService, userService), transactionHandler.GetAllTransactions)
 	api.GET("/transactions/:transaction_id", authorize(authService, userService), transactionHandler.GetTransactionByID)
 	api.PUT("/transactions/:transaction_id/verify", authorize(authService, userService), transactionHandler.VerifyTransaction)
+
+	// api.GET("/test/calculate/:campaign_id", transactionHandler.GetNewCampaignStats)
+
 	router.Run()
 
 }

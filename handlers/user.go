@@ -127,6 +127,7 @@ func (h *userHandler) UpdateAvatar(c *gin.Context) {
 	file, err := c.FormFile("avatar")
 
 	if err != nil {
+		fmt.Println(err)
 		c.JSON(http.StatusInternalServerError, helpers.APIResponse("Tidak dapat menyimpan file", http.StatusInternalServerError, "error", gin.H{"error": err.Error()}))
 
 		return
@@ -134,19 +135,22 @@ func (h *userHandler) UpdateAvatar(c *gin.Context) {
 
 	authUser := c.MustGet("authUser").(user.User)
 	fileExt := filepath.Ext(file.Filename)
-	fullDir := path.Join("images", "users", fmt.Sprintf("ava-%d%s", authUser.ID, fileExt))
+	fileName := fmt.Sprintf("ava-%d%s", authUser.ID, fileExt)
+	fullDir := path.Join("images", "users", fileName)
 
 	err = c.SaveUploadedFile(file, fullDir)
 
 	if err != nil {
+		fmt.Println(err)
 		c.JSON(http.StatusInternalServerError, helpers.APIResponse("Tidak dapat menyimpan file", http.StatusInternalServerError, "error", gin.H{"error": err.Error()}))
 
 		return
 	}
 
-	_, err = h.userService.UpdateAvatar(authUser, fullDir)
+	_, err = h.userService.UpdateAvatar(authUser, fileName)
 
 	if err != nil {
+		fmt.Println(err)
 		c.JSON(http.StatusInternalServerError, helpers.APIResponse("Tidak dapat menyimpan file", http.StatusInternalServerError, "fail", gin.H{"is_uploaded": false}))
 
 		return

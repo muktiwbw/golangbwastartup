@@ -24,6 +24,7 @@ func (s *service) GenerateToken(userID int) (string, error) {
 	// Mapping claims (userID, iat)
 	claims := jwt.MapClaims{
 		"user_id": userID,
+		"exp":     time.Now().Add(time.Hour * 72).Unix(),
 		"iat":     time.Now(),
 	}
 
