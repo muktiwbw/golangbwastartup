@@ -58,7 +58,7 @@ func main() {
 
 	// CORS
 	corsConfig := cors.DefaultConfig()
-	corsConfig.AllowOrigins = []string{"http://127.0.0.1:3000"}
+	corsConfig.AllowOrigins = []string{"http://127.0.0.1:3000", "https://cg-gofund.herokuapp.com"}
 	corsConfig.AllowMethods = []string{"GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"}
 	corsConfig.AllowHeaders = []string{"Authorization", "Content-Type"}
 	router.Use(cors.New(corsConfig))
