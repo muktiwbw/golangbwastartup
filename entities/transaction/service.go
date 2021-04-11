@@ -2,10 +2,13 @@ package transaction
 
 import (
 	"time"
+
+	"github.com/dchest/uniuri"
 )
 
 type Service interface {
 	CreateTransaction(transactionInput TransactionInput) (Transaction, error)
+	UpdateTransaction(transaction Transaction) (Transaction, error)
 	GetAllTransactions() ([]Transaction, error)
 	GetAllTransactionsByRef(id int, field string) ([]Transaction, error)
 	GetTransactionByID(id int) (Transaction, error)
@@ -27,7 +30,7 @@ func (s *service) CreateTransaction(transactionInput TransactionInput) (Transact
 		UserID:     transactionInput.UserID,
 		Amount:     transactionInput.Amount,
 		Status:     "pending",
-		Code:       "randomString",
+		Code:       uniuri.New(),
 		CreatedAt:  time.Now(),
 		UpdatedAt:  time.Now(),
 	}
@@ -39,6 +42,16 @@ func (s *service) CreateTransaction(transactionInput TransactionInput) (Transact
 	}
 
 	return createdTransaction, nil
+}
+
+func (s *service) UpdateTransaction(transaction Transaction) (Transaction, error) {
+	updatedTransaction, err := s.repository.Update(transaction)
+
+	if err != nil {
+		return updatedTransaction, err
+	}
+
+	return updatedTransaction, nil
 }
 
 func (s *service) GetAllTransactions() ([]Transaction, error) {

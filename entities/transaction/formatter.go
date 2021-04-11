@@ -5,13 +5,14 @@ import (
 )
 
 type TransactionFormat struct {
-	ID        int                       `json:"id"`
-	Amount    int                       `json:"amount"`
-	Status    string                    `json:"status"`
-	Code      string                    `json:"code"`
-	Campaign  CampaignTransactionFormat `json:"campaign"`
-	User      UserTransactionFormat     `json:"user"`
-	CreatedAt time.Time                 `json:"created_at"`
+	ID         int                       `json:"id"`
+	Amount     int                       `json:"amount"`
+	Status     string                    `json:"status"`
+	Code       string                    `json:"code"`
+	PaymentURL string                    `json:"payment_url"`
+	Campaign   CampaignTransactionFormat `json:"campaign"`
+	User       UserTransactionFormat     `json:"user"`
+	CreatedAt  time.Time                 `json:"created_at"`
 }
 
 type CampaignTransactionFormat struct {
@@ -28,10 +29,11 @@ type UserTransactionFormat struct {
 
 func FormatTransaction(transaction Transaction) TransactionFormat {
 	return TransactionFormat{
-		ID:     transaction.ID,
-		Amount: transaction.Amount,
-		Status: transaction.Status,
-		Code:   transaction.Code,
+		ID:         transaction.ID,
+		Amount:     transaction.Amount,
+		Status:     transaction.Status,
+		Code:       transaction.Code,
+		PaymentURL: transaction.PaymentURL,
 		Campaign: CampaignTransactionFormat{
 			ID:        transaction.Campaign.ID,
 			Name:      transaction.Campaign.Name,

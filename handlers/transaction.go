@@ -2,10 +2,14 @@ package handlers
 
 import (
 	"bwastartup/entities/campaign"
+	"bwastartup/entities/payment"
 	"bwastartup/entities/transaction"
 	"bwastartup/entities/user"
 	"bwastartup/helpers"
+	"fmt"
 	"net/http"
+	"os"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 )
@@ -13,10 +17,11 @@ import (
 type transactionHandler struct {
 	transactionService transaction.Service
 	campaignService    campaign.Service
+	paymentService     payment.Service
 }
 
-func NewTransactionHandler(transactionService transaction.Service, campaignService campaign.Service) *transactionHandler {
-	return &transactionHandler{transactionService, campaignService}
+func NewTransactionHandler(transactionService transaction.Service, campaignService campaign.Service, paymentService payment.Service) *transactionHandler {
+	return &transactionHandler{transactionService, campaignService, paymentService}
 }
 
 func (h transactionHandler) CreateTransaction(c *gin.Context) {
@@ -66,6 +71,49 @@ func (h transactionHandler) CreateTransaction(c *gin.Context) {
 		return
 	}
 
+	// Get payment token
+	nameSplits := strings.Split(authUser.Name, " ")
+	fName := nameSplits[0]
+	lName := fName
+
+	if len(nameSplits) > 1 {
+		lName = nameSplits[1]
+	}
+
+	snapReqData := map[string]interface{}{
+		"transaction": map[string]interface{}{
+			"orderID":  createdTransaction.Code,
+			"grossAmt": int64(createdTransaction.Amount),
+		},
+		"customer": map[string]interface{}{
+			"fName": fName,
+			"lName": lName,
+			"email": authUser.Email,
+		},
+		"project": map[string]interface{}{
+			"id":   fmt.Sprint(foundCampaign.ID),
+			"name": foundCampaign.Name,
+		},
+	}
+
+	snapResponse, err := h.paymentService.GenerateSnapLink(snapReqData)
+
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, helpers.APIResponse("Terjadi kesalahan pada server", http.StatusInternalServerError, "error", gin.H{"error": err.Error()}))
+
+		return
+	}
+
+	createdTransaction.PaymentURL = fmt.Sprintf("%s/%s", os.Getenv("MIDTRANS_SNAP_URL"), snapResponse.Token)
+
+	updatedTransaction, err := h.transactionService.UpdateTransaction(createdTransaction)
+
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, helpers.APIResponse("Terjadi kesalahan pada server", http.StatusInternalServerError, "error", gin.H{"error": err.Error()}))
+
+		return
+	}
+
 	// Calculate and update campaign stats
 	currentAmount, backerCount, err := h.transactionService.GetNewCampaignStats(foundCampaign.ID)
 
@@ -77,7 +125,7 @@ func (h transactionHandler) CreateTransaction(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusCreated, helpers.APIResponse("Successfully created a transaction", http.StatusCreated, "created", transaction.FormatTransaction(createdTransaction)))
+	c.JSON(http.StatusCreated, helpers.APIResponse("Successfully created a transaction", http.StatusCreated, "created", transaction.FormatTransaction(updatedTransaction)))
 
 }
 

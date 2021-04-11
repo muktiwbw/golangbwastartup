@@ -1,13 +1,12 @@
 package transaction
 
 import (
-	"fmt"
-
 	"gorm.io/gorm"
 )
 
 type Repository interface {
 	Save(transaction Transaction) (Transaction, error)
+	Update(transaction Transaction) (Transaction, error)
 	All() ([]Transaction, error)
 	AllByRef(id int, field string) ([]Transaction, error)
 	Get(id int) (Transaction, error)
@@ -30,13 +29,17 @@ func (r *repository) Save(transaction Transaction) (Transaction, error) {
 		return transaction, err
 	}
 
-	returnedTransaction, err := r.Get(transaction.ID)
+	return transaction, nil
+}
+
+func (r *repository) Update(transaction Transaction) (Transaction, error) {
+	err := r.db.Save(&transaction).Error
 
 	if err != nil {
-		return returnedTransaction, err
+		return transaction, err
 	}
 
-	return returnedTransaction, nil
+	return transaction, nil
 }
 
 func (r *repository) All() ([]Transaction, error) {
@@ -103,7 +106,7 @@ func (r *repository) CalculateCampaignStats(campaignID int) (currentAmount int, 
 
 	currentAmount = trx.Amount
 
-	fmt.Printf("Current amount: %d\nBacker count: %d\n", currentAmount, backerCount)
+	// fmt.Printf("Current amount: %d\nBacker count: %d\n", currentAmount, backerCount)
 
 	return currentAmount, backerCount, nil
 

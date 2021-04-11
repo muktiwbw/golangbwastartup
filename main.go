@@ -3,31 +3,41 @@ package main
 import (
 	"bwastartup/auth"
 	"bwastartup/entities/campaign"
+	"bwastartup/entities/payment"
 	"bwastartup/entities/transaction"
 	"bwastartup/entities/user"
 	"bwastartup/handlers"
 	"bwastartup/helpers"
 	"errors"
+	"fmt"
 	"log"
 	"net/http"
+	"os"
 	"strings"
 
 	"github.com/dgrijalva/jwt-go"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
+	"github.com/joho/godotenv"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
 )
 
 func main() {
-	dsn := "sbxmukti:password1234@tcp(127.0.0.1:3306)/go_bwastartup?charset=utf8mb4&parseTime=True&loc=Local"
+	err := godotenv.Load()
+
+	if err != nil {
+		log.Fatal("Error loading environment file.")
+	}
+
+	dsn := fmt.Sprintf("%s:%s@tcp(%s:%s)/%s?charset=utf8mb4&parseTime=True&loc=Local", os.Getenv("DB_USERNAME"), os.Getenv("DB_PASSWORD"), os.Getenv("DB_HOST"), os.Getenv("DB_PORT"), os.Getenv("DB_DATABASE"))
+
 	db, err := gorm.Open(mysql.Open(dsn), &gorm.Config{})
 
 	if err != nil {
 		log.Fatal(err.Error())
 	}
 
-	// log.Println("Connection to database is established.")
 	log.Println("Connected to database.")
 
 	userRepository := user.NewRepository(db)
@@ -38,10 +48,11 @@ func main() {
 	authService := auth.NewService()
 	campaignService := campaign.NewService(campaignRepository)
 	transactionService := transaction.NewService(transactionRepository)
+	paymentService := payment.NewService()
 
 	userHandler := handlers.NewUserHandler(userService, authService)
 	campaignHandler := handlers.NewCampaignHandler(campaignService)
-	transactionHandler := handlers.NewTransactionHandler(transactionService, campaignService)
+	transactionHandler := handlers.NewTransactionHandler(transactionService, campaignService, paymentService)
 
 	router := gin.Default()
 
