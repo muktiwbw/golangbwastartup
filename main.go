@@ -9,7 +9,6 @@ import (
 	"bwastartup/handlers"
 	"bwastartup/helpers"
 	"errors"
-	"fmt"
 	"log"
 	"net/http"
 	"os"
@@ -30,7 +29,8 @@ func main() {
 		log.Fatal("Error loading environment file.")
 	}
 
-	dsn := fmt.Sprintf("%s:%s@tcp(%s:%s)/%s?charset=utf8mb4&parseTime=True&loc=Local", os.Getenv("DB_USERNAME"), os.Getenv("DB_PASSWORD"), os.Getenv("DB_HOST"), os.Getenv("DB_PORT"), os.Getenv("DB_DATABASE"))
+	dsn := os.Getenv("CLEARDB_DATABASE_URL")
+	// dsn := fmt.Sprintf("%s:%s@tcp(%s:%s)/%s?charset=utf8mb4&parseTime=True&loc=Local", os.Getenv("DB_USERNAME"), os.Getenv("DB_PASSWORD"), os.Getenv("DB_HOST"), os.Getenv("DB_PORT"), os.Getenv("DB_DATABASE"))
 
 	db, err := gorm.Open(mysql.Open(dsn), &gorm.Config{})
 
