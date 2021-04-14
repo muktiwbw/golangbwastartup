@@ -106,6 +106,7 @@ func main() {
 
 	// api.GET("/test/calculate/:campaign_id", transactionHandler.GetNewCampaignStats)
 
+	log.Println("Listening to port", os.Getenv("PORT"))
 	router.Run(":" + os.Getenv("PORT"))
 
 }
