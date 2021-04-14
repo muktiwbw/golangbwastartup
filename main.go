@@ -9,7 +9,6 @@ import (
 	"bwastartup/handlers"
 	"bwastartup/helpers"
 	"errors"
-	"fmt"
 	"log"
 	"net/http"
 	"os"
@@ -107,7 +106,7 @@ func main() {
 
 	// api.GET("/test/calculate/:campaign_id", transactionHandler.GetNewCampaignStats)
 
-	router.Run(fmt.Sprintf(":%s", os.Getenv("PORT")))
+	router.Run()
 
 }
 
