@@ -1,1 +1,1 @@
-worker: bin/bwastartup
+web: bin/bwastartup
