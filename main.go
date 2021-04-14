@@ -29,8 +29,6 @@ func main() {
 	// 	log.Fatal("Error loading environment file.")
 	// }
 
-	log.Fatal("Listening to port", os.Getenv("PORT"))
-
 	// dsn := os.Getenv("CLEARDB_DATABASE_URL")
 	dsn := os.Getenv("POSTGRESQL_DATABASE_URL")
 
