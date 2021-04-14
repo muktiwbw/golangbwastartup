@@ -31,6 +31,7 @@ func main() {
 
 	// dsn := os.Getenv("CLEARDB_DATABASE_URL")
 	dsn := os.Getenv("POSTGRESQL_DATABASE_URL")
+	log.Fatal("Using dsn string ", dsn)
 
 	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{
 		NamingStrategy: schema.NamingStrategy{
