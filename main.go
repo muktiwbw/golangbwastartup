@@ -17,18 +17,17 @@ import (
 	"github.com/dgrijalva/jwt-go"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
-	"github.com/joho/godotenv"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 	"gorm.io/gorm/schema"
 )
 
 func main() {
-	err := godotenv.Load()
+	// err := godotenv.Load()
 
-	if err != nil {
-		log.Fatal("Error loading environment file.")
-	}
+	// if err != nil {
+	// 	log.Fatal("Error loading environment file.")
+	// }
 
 	// dsn := os.Getenv("CLEARDB_DATABASE_URL")
 	dsn := os.Getenv("POSTGRESQL_DATABASE_URL")
