@@ -44,7 +44,7 @@ func main() {
 		log.Fatal(err.Error())
 	}
 
-	log.Println("Connected to database.")
+	log.Fatal("Connected to database.")
 
 	userRepository := user.NewRepository(db)
 	campaignRepository := campaign.NewRepository(db)
