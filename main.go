@@ -106,7 +106,7 @@ func main() {
 
 	// api.GET("/test/calculate/:campaign_id", transactionHandler.GetNewCampaignStats)
 
-	router.Run()
+	router.Run(":" + os.Getenv("PORT"))
 
 }
 
