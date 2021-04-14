@@ -40,6 +40,7 @@ func main() {
 	})
 
 	if err != nil {
+		log.Fatal("Error connecting to database.")
 		log.Fatal(err.Error())
 	}
 
