@@ -29,6 +29,8 @@ func main() {
 	// 	log.Fatal("Error loading environment file.")
 	// }
 
+	log.Fatal("Listening to port", os.Getenv("PORT"))
+
 	// dsn := os.Getenv("CLEARDB_DATABASE_URL")
 	dsn := os.Getenv("POSTGRESQL_DATABASE_URL")
 
@@ -106,7 +108,6 @@ func main() {
 
 	// api.GET("/test/calculate/:campaign_id", transactionHandler.GetNewCampaignStats)
 
-	log.Println("Listening to port", os.Getenv("PORT"))
 	router.Run(":" + os.Getenv("PORT"))
 
 }
