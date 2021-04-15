@@ -23,13 +23,6 @@ import (
 )
 
 func main() {
-	// err := godotenv.Load()
-
-	// if err != nil {
-	// 	log.Fatal("Error loading environment file.")
-	// }
-
-	// dsn := os.Getenv("CLEARDB_DATABASE_URL")
 	dsn := os.Getenv("POSTGRESQL_DATABASE_URL")
 
 	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{
@@ -101,8 +94,6 @@ func main() {
 	api.GET("/transactions", authorize(authService, userService), transactionHandler.GetAllTransactions)
 	api.GET("/transactions/:transaction_id", authorize(authService, userService), transactionHandler.GetTransactionByID)
 	api.PUT("/transactions/:transaction_id/verify", authorize(authService, userService), transactionHandler.VerifyTransaction)
-
-	// api.GET("/test/calculate/:campaign_id", transactionHandler.GetNewCampaignStats)
 
 	router.Run()
 
