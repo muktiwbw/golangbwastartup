@@ -4,12 +4,8 @@ import (
 	"bwastartup/entities/campaign"
 	"bwastartup/entities/user"
 	"bwastartup/helpers"
-	"fmt"
 	"net/http"
-	"path"
-	"path/filepath"
 	"strconv"
-	"time"
 
 	"github.com/gin-gonic/gin"
 )
@@ -97,7 +93,7 @@ func (h campaignHandler) CreateCampaign(c *gin.Context) {
 	err := c.ShouldBindJSON(&input)
 
 	if err != nil {
-		c.JSON(http.StatusBadRequest, helpers.APIResponse("Kesalahan pada input field", http.StatusBadRequest, "error", helpers.GetValidationErrors(err)))
+		c.JSON(http.StatusBadRequest, helpers.APIResponse("Invalid input", http.StatusBadRequest, "error", helpers.GetValidationErrors(err)))
 
 		return
 	}
@@ -108,7 +104,7 @@ func (h campaignHandler) CreateCampaign(c *gin.Context) {
 	createdCampaign, err := h.campaignService.CreateCampaign(input)
 
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, helpers.APIResponse("Terjadi kesalahan pada server", http.StatusInternalServerError, "error", gin.H{"error": err.Error()}))
+		c.JSON(http.StatusInternalServerError, helpers.APIResponse("There's an error from the server", http.StatusInternalServerError, "error", gin.H{"error": err.Error()}))
 
 		return
 	}
@@ -214,102 +210,53 @@ func (h campaignHandler) DeleteCampaign(c *gin.Context) {
 }
 
 func (h campaignHandler) CreateCampaignImages(c *gin.Context) {
-	var uri campaign.GetCampaignByIDInput
-
-	err := c.ShouldBindUri(&uri)
-
-	if err != nil {
-		c.JSON(http.StatusBadRequest, helpers.APIResponse("Kesalahan pada input field", http.StatusBadRequest, "error", helpers.GetValidationErrors(err)))
-
-		return
-	}
-
-	foundCampaign, err := h.campaignService.GetCampaignByID(uri.ID)
-
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, helpers.APIResponse("Terjadi kesalahan pada server", http.StatusInternalServerError, "error", gin.H{"error": err.Error()}))
-
-		return
-	}
-
-	if foundCampaign.ID <= 0 {
-		c.JSON(http.StatusNotFound, helpers.APIResponse("Campaign tidak ditemukan", http.StatusNotFound, "not-found", nil))
-
-		return
-	}
-
 	form, err := c.MultipartForm()
-
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, helpers.APIResponse("Terjadi kesalahan pada server", http.StatusInternalServerError, "error", gin.H{"error": err.Error()}))
+		c.JSON(http.StatusInternalServerError, helpers.APIResponse("There's an error from the server", http.StatusInternalServerError, "error", gin.H{"error": err.Error()}))
 
 		return
 	}
 
 	images := form.File["images"]
+	if len(images) <= 0 {
+		c.JSON(http.StatusBadRequest, helpers.APIResponse("File not found", http.StatusBadRequest, "error", gin.H{"error": err.Error()}))
+
+		return
+	}
+
+	var uri campaign.GetCampaignByIDInput
+	if err = c.ShouldBindUri(&uri); err != nil {
+		c.JSON(http.StatusBadRequest, helpers.APIResponse("Invalid input", http.StatusBadRequest, "error", helpers.GetValidationErrors(err)))
+
+		return
+	}
+
+	foundCampaign, err := h.campaignService.GetCampaignByID(uri.ID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, helpers.APIResponse("There's an error from the server", http.StatusInternalServerError, "error", gin.H{"error": err.Error()}))
+
+		return
+	}
+
+	if foundCampaign.ID <= 0 {
+		c.JSON(http.StatusNotFound, helpers.APIResponse("Campaign not found", http.StatusNotFound, "not-found", nil))
+
+		return
+	}
+
 	coverIndex, err := strconv.Atoi(form.Value["cover_index"][0])
-	// fmt.Println(images, coverIndex)
-	// fmt.Println(c.FullPath())
-
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, helpers.APIResponse("Terjadi kesalahan pada server", http.StatusInternalServerError, "error", gin.H{"error": err.Error()}))
+		c.JSON(http.StatusInternalServerError, helpers.APIResponse("There's an error from the server", http.StatusInternalServerError, "error", gin.H{"error": err.Error()}))
 
 		return
 	}
 
-	campaignImages := []campaign.CampaignImage{}
-
-UploadImageLoop:
-	for i, image := range images {
-		fileExt := filepath.Ext(image.Filename)
-		fileTimestamp := time.Now().UnixNano()
-		fileName := fmt.Sprintf("img-%d-%d%s", foundCampaign.ID, fileTimestamp, fileExt)
-		fullDir := path.Join("images", "campaigns", fileName)
-
-		err := c.SaveUploadedFile(image, fullDir)
-
-		if err != nil {
-			break UploadImageLoop
-		}
-
-		campaignImage := campaign.CampaignImage{
-			CampaignID: foundCampaign.ID,
-			Filename:   fileName,
-			IsCover:    false,
-			CreatedAt:  time.Now(),
-			UpdatedAt:  time.Now(),
-		}
-
-		if coverIndex == i {
-			campaignImage.IsCover = true
-		}
-
-		campaignImages = append(campaignImages, campaignImage)
-
-	}
-
+	createdImages, err := h.campaignService.CreateCampaignImages(foundCampaign.ID, coverIndex, images)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, helpers.APIResponse("Terjadi kesalahan pada server", http.StatusInternalServerError, "error", gin.H{"error": err.Error()}))
+		c.JSON(http.StatusInternalServerError, helpers.APIResponse("There's an error from the server", http.StatusInternalServerError, "error", gin.H{"are_uploaded": false}))
 
 		return
 	}
 
-	_, err = h.campaignService.CreateCampaignImages(campaignImages)
-
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, helpers.APIResponse("Terjadi kesalahan pada server", http.StatusInternalServerError, "error", gin.H{"error": err.Error()}))
-
-		return
-	}
-
-	// Get the campaign with campaign images preloaded
-	_, err = h.campaignService.GetCampaignByID(foundCampaign.ID)
-
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, helpers.APIResponse("Terjadi kesalahan pada server", http.StatusInternalServerError, "error", gin.H{"are_uploaded": false}))
-
-		return
-	}
-
-	c.JSON(http.StatusCreated, helpers.APIResponse("Successfully uploaded campaign images", http.StatusCreated, "created", gin.H{"are_uploaded": true, "images": campaign.FormatCampaignImages(campaignImages)}))
+	c.JSON(http.StatusCreated, helpers.APIResponse("Successfully uploaded campaign images", http.StatusCreated, "created", gin.H{"are_uploaded": true, "images": campaign.FormatCampaignImages(createdImages)}))
 }

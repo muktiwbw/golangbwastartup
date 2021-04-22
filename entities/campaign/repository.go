@@ -13,6 +13,7 @@ type Repository interface {
 	Delete(campaign Campaign) error
 	ResetCampaignImageCover(campaignID int) error
 	SaveCampaignImage(image CampaignImage) (CampaignImage, error)
+	SaveCampaignImages(images []CampaignImage) ([]CampaignImage, error)
 }
 
 type repository struct {
@@ -107,4 +108,12 @@ func (r *repository) SaveCampaignImage(image CampaignImage) (CampaignImage, erro
 	}
 
 	return image, nil
+}
+
+func (r *repository) SaveCampaignImages(images []CampaignImage) ([]CampaignImage, error) {
+	if err := r.db.Create(&images).Error; err != nil {
+		return images, err
+	}
+
+	return images, nil
 }

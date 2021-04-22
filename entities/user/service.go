@@ -2,8 +2,14 @@ package user
 
 import (
 	"errors"
+	"fmt"
+	"mime/multipart"
+	"os"
+	"path/filepath"
+	"strings"
 	"time"
 
+	"github.com/muktiwbw/gdstorage"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -12,15 +18,16 @@ type Service interface {
 	RegisterUser(input RegisterUserInput) (User, error)
 	LoginUser(input LoginUserInput) (User, error)
 	EmailIsAvailable(input CheckEmailAvailabilityInput) (bool, error)
-	UpdateAvatar(user User, fullDir string) (User, error)
+	UpdateAvatar(user User, file *multipart.FileHeader) (string, error)
 }
 
 type service struct {
 	repository Repository
+	gds        gdstorage.GoogleDriveStorage
 }
 
-func NewService(repository Repository) Service {
-	return &service{repository}
+func NewService(repository Repository, gds gdstorage.GoogleDriveStorage) Service {
+	return &service{repository, gds}
 }
 
 func (s *service) GetUserByID(user_id int) (User, error) {
@@ -96,16 +103,35 @@ func (s *service) EmailIsAvailable(input CheckEmailAvailabilityInput) (bool, err
 	return false, nil
 }
 
-// args: file, fileName
-func (s *service) UpdateAvatar(user User, fileName string) (User, error) {
-	// Update avatar to db
-	user.Avatar = fileName
-	updatedUser, err := s.repository.Update(user)
-
-	if err != nil {
-		return updatedUser, err
+func (s *service) UpdateAvatar(user User, file *multipart.FileHeader) (string, error) {
+	// * Check if avatar exists
+	if user.Avatar != "" {
+		if err := s.gds.DeleteFile(user.Avatar); err != nil {
+			if (strings.Split(err.Error(), ": "))[0] != "ERR404" {
+				return "", errors.New(fmt.Sprintf("Unable to replace existing file: %v", err))
+			}
+		}
 	}
 
-	return updatedUser, nil
+	// * Store the file to google drive
+	fileExt := filepath.Ext(file.Filename)
+	fileName := fmt.Sprintf("ava-%d_%d%s", user.ID, time.Now().UnixNano(), fileExt)
+
+	driveFile := gdstorage.StoreFileInput{Name: fileName, FileHeader: file}
+
+	driveFileID, err := s.gds.StoreFile(&driveFile, os.Getenv("DRIVE_APP_USER_IMAGES_DIR_ID"))
+	if err != nil {
+		return "", err
+	}
+
+	// * Update avatar to db
+	user.Avatar = driveFileID
+	_, err = s.repository.Update(user)
+
+	if err != nil {
+		return "", err
+	}
+
+	return gdstorage.GetURL(driveFileID), nil
 
 }

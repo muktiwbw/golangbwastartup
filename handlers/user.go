@@ -6,8 +6,6 @@ import (
 	"bwastartup/helpers"
 	"fmt"
 	"net/http"
-	"path"
-	"path/filepath"
 
 	"github.com/gin-gonic/gin"
 )
@@ -123,40 +121,24 @@ func (h *userHandler) CheckEmailAvailability(c *gin.Context) {
 }
 
 func (h *userHandler) UpdateAvatar(c *gin.Context) {
-
 	file, err := c.FormFile("avatar")
-
 	if err != nil {
-		fmt.Println(err)
-		c.JSON(http.StatusInternalServerError, helpers.APIResponse("Tidak dapat menyimpan file", http.StatusInternalServerError, "error", gin.H{"error": err.Error()}))
+		c.JSON(http.StatusBadRequest, helpers.APIResponse("Failed to extract file input", http.StatusBadRequest, "error", gin.H{"error": err.Error()}))
 
 		return
 	}
 
 	authUser := c.MustGet("authUser").(user.User)
-	fileExt := filepath.Ext(file.Filename)
-	fileName := fmt.Sprintf("ava-%d%s", authUser.ID, fileExt)
-	fullDir := path.Join("images", "users", fileName)
 
-	err = c.SaveUploadedFile(file, fullDir)
-
+	driveFileID, err := h.userService.UpdateAvatar(authUser, file)
 	if err != nil {
 		fmt.Println(err)
-		c.JSON(http.StatusInternalServerError, helpers.APIResponse("Tidak dapat menyimpan file", http.StatusInternalServerError, "error", gin.H{"error": err.Error()}))
+		c.JSON(http.StatusInternalServerError, helpers.APIResponse("Failed to save file", http.StatusInternalServerError, "fail", gin.H{"is_uploaded": false}))
 
 		return
 	}
 
-	_, err = h.userService.UpdateAvatar(authUser, fileName)
-
-	if err != nil {
-		fmt.Println(err)
-		c.JSON(http.StatusInternalServerError, helpers.APIResponse("Tidak dapat menyimpan file", http.StatusInternalServerError, "fail", gin.H{"is_uploaded": false}))
-
-		return
-	}
-
-	c.JSON(http.StatusOK, helpers.APIResponse("Sukses menyimpan foto", http.StatusOK, "ok", gin.H{"is_uploaded": true, "filename": fullDir}))
+	c.JSON(http.StatusOK, helpers.APIResponse("Sukses menyimpan file", http.StatusOK, "ok", gin.H{"is_uploaded": true, "filename": driveFileID}))
 
 }
 

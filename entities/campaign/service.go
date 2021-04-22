@@ -2,9 +2,13 @@ package campaign
 
 import (
 	"fmt"
+	"mime/multipart"
+	"os"
+	"path/filepath"
 	"time"
 
 	"github.com/gosimple/slug"
+	"github.com/muktiwbw/gdstorage"
 )
 
 type Service interface {
@@ -14,15 +18,16 @@ type Service interface {
 	CreateCampaign(input CreateCampaignInput) (Campaign, error)
 	UpdateCampaign(campaign Campaign, updateValues UpdateCampaignInput) (Campaign, error)
 	DeleteCampaign(campaign Campaign) error
-	CreateCampaignImages(images []CampaignImage) ([]CampaignImage, error)
+	CreateCampaignImages(campaignID int, coverIndex int, files []*multipart.FileHeader) ([]CampaignImage, error)
 }
 
 type service struct {
 	repository Repository
+	gds        gdstorage.GoogleDriveStorage
 }
 
-func NewService(repository Repository) Service {
-	return &service{repository}
+func NewService(repository Repository, gds gdstorage.GoogleDriveStorage) Service {
+	return &service{repository, gds}
 }
 
 func (s *service) GetAllCampaigns() ([]Campaign, error) {
@@ -110,30 +115,47 @@ func (s *service) DeleteCampaign(campaign Campaign) error {
 	return nil
 }
 
-func (s *service) CreateCampaignImages(images []CampaignImage) ([]CampaignImage, error) {
-	var err error = nil
+func (s *service) CreateCampaignImages(campaignID int, coverIndex int, files []*multipart.FileHeader) ([]CampaignImage, error) {
+	// * Store images to Google Ddrive
+	driveFileInputs := []*gdstorage.StoreFileInput{}
 
-	createdImages := []CampaignImage{}
+	for _, file := range files {
+		fileExt := filepath.Ext(file.Filename)
+		fileName := fmt.Sprintf("campaign-%d-%d%s", campaignID, time.Now().UnixNano(), fileExt)
 
-	err = s.repository.ResetCampaignImageCover(images[0].CampaignID)
-
-	if err != nil {
-		return createdImages, err
+		driveFileInputs = append(driveFileInputs, &gdstorage.StoreFileInput{Name: fileName, FileHeader: file})
 	}
 
-SavingEachImage: // It's a looping label, later useful for breaking out of a loop
-	for _, image := range images {
-		img, err := s.repository.SaveCampaignImage(image)
+	driveFileIDs, err := s.gds.StoreFiles(driveFileInputs, os.Getenv("DRIVE_APP_CAMPAIGN_IMAGES_DIR_ID"))
+	if err != nil {
+		return []CampaignImage{}, err
+	}
 
-		if err != nil {
-			break SavingEachImage
+	// * Save images data to DB
+	campaignImages := []CampaignImage{}
+
+	for i, driveFileID := range driveFileIDs {
+		campaignImage := CampaignImage{}
+		campaignImage.CampaignID = campaignID
+		campaignImage.Filename = driveFileID
+		campaignImage.IsCover = false
+		campaignImage.CreatedAt = time.Now()
+		campaignImage.UpdatedAt = time.Now()
+
+		if i == coverIndex {
+			campaignImage.IsCover = true
 		}
 
-		createdImages = append(createdImages, img)
+		campaignImages = append(campaignImages, campaignImage)
 	}
 
+	if err := s.repository.ResetCampaignImageCover(campaignID); err != nil {
+		return []CampaignImage{}, err
+	}
+
+	createdImages, err := s.repository.SaveCampaignImages(campaignImages)
 	if err != nil {
-		return createdImages, err
+		return campaignImages, err
 	}
 
 	return createdImages, nil
