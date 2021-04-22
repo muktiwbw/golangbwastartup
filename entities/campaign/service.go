@@ -121,7 +121,7 @@ func (s *service) CreateCampaignImages(campaignID int, coverIndex int, files []*
 
 	for _, file := range files {
 		fileExt := filepath.Ext(file.Filename)
-		fileName := fmt.Sprintf("campaign-%d-%d%s", campaignID, time.Now().UnixNano(), fileExt)
+		fileName := fmt.Sprintf("campaign-%d%s", campaignID, fileExt)
 
 		driveFileInputs = append(driveFileInputs, &gdstorage.StoreFileInput{Name: fileName, FileHeader: file})
 	}

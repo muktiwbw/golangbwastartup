@@ -107,7 +107,8 @@ func (s *service) UpdateAvatar(user User, file *multipart.FileHeader) (string, e
 	// * Check if avatar exists
 	if user.Avatar != "" {
 		if err := s.gds.DeleteFile(user.Avatar); err != nil {
-			if (strings.Split(err.Error(), ": "))[0] != "ERR404" {
+			e := strings.Split(err.Error(), ", ")
+			if e[len(e)-1] != "notFound" {
 				return "", errors.New(fmt.Sprintf("Unable to replace existing file: %v", err))
 			}
 		}
@@ -115,7 +116,7 @@ func (s *service) UpdateAvatar(user User, file *multipart.FileHeader) (string, e
 
 	// * Store the file to google drive
 	fileExt := filepath.Ext(file.Filename)
-	fileName := fmt.Sprintf("ava-%d_%d%s", user.ID, time.Now().UnixNano(), fileExt)
+	fileName := fmt.Sprintf("ava-%d%s", user.ID, fileExt)
 
 	driveFile := gdstorage.StoreFileInput{Name: fileName, FileHeader: file}
 
