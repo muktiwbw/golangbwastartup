@@ -1,6 +1,10 @@
 package campaign
 
-import "time"
+import (
+	"time"
+
+	"github.com/muktiwbw/gdstorage"
+)
 
 type CampaignFormat struct {
 	ID            int                       `json:"id"`
@@ -48,14 +52,19 @@ type CampaignImageFormat struct {
 
 func FormatCampaign(campaign Campaign) CampaignFormat {
 	var coverImage string
+	var avatar string
 
 ImageFilterLoop:
 	for _, image := range campaign.CampaignImages {
 		if image.IsCover {
-			coverImage = image.Filename
+			coverImage = gdstorage.GetURL(image.Filename)
 
 			break ImageFilterLoop
 		}
+	}
+
+	if campaign.User.Avatar != "" {
+		avatar = gdstorage.GetURL(campaign.User.Avatar)
 	}
 
 	return CampaignFormat{
@@ -72,7 +81,7 @@ ImageFilterLoop:
 		User: CampaignUserSnippetFormat{
 			ID:     campaign.User.ID,
 			Name:   campaign.User.Name,
-			Avatar: campaign.User.Avatar,
+			Avatar: avatar,
 		},
 		CreatedAt: campaign.CreatedAt,
 	}
@@ -82,7 +91,15 @@ func FormatCampaignThumbnail(campaign Campaign) CampaignThumbnailFormat {
 	var image string
 
 	if len(campaign.CampaignImages) >= 1 {
-		image = campaign.CampaignImages[0].Filename
+
+	ImageFilterLoop:
+		for _, i := range campaign.CampaignImages {
+			if i.IsCover {
+				image = gdstorage.GetURL(i.Filename)
+
+				break ImageFilterLoop
+			}
+		}
 	}
 
 	return CampaignThumbnailFormat{
@@ -102,7 +119,7 @@ func FormatCampaignImages(images []CampaignImage) []CampaignImageFormat {
 	formattedCampaignImages := []CampaignImageFormat{}
 
 	for _, image := range images {
-		formattedCampaignImages = append(formattedCampaignImages, CampaignImageFormat{Filename: image.Filename, IsCover: image.IsCover})
+		formattedCampaignImages = append(formattedCampaignImages, CampaignImageFormat{Filename: gdstorage.GetURL(image.Filename), IsCover: image.IsCover})
 	}
 
 	return formattedCampaignImages
