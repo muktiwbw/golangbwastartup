@@ -17,32 +17,48 @@ import (
 	"github.com/dgrijalva/jwt-go"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
+	"github.com/joho/godotenv"
+	"github.com/muktiwbw/gdstorage"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 	"gorm.io/gorm/schema"
 )
 
 func main() {
-	dsn := os.Getenv("POSTGRESQL_DATABASE_URL")
+	// * Load env, comment when deploying
+	if err := godotenv.Load(); err != nil {
+		log.Fatalf("Error loading .env: %v\n", err)
+	}
 
+	// * DB
+	dsn := os.Getenv("POSTGRESQL_DATABASE_URL")
 	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{
 		NamingStrategy: schema.NamingStrategy{
 			TablePrefix:   os.Getenv("POSTGRESQL_DATABASE_SCHEMA") + ".",
 			SingularTable: false,
 		},
 	})
-
 	if err != nil {
 		log.Fatal(err.Error())
 	}
 
+	// * Storage
+	// * Create a Google API service
+	srv, err := gdstorage.NewStorageService()
+	if err != nil {
+		log.Fatalf("Error creating storage service: %v\n", err)
+	}
+
+	gds := gdstorage.New(srv)
+
+	// * Handlers
 	userRepository := user.NewRepository(db)
 	campaignRepository := campaign.NewRepository(db)
 	transactionRepository := transaction.NewRepository(db)
 
-	userService := user.NewService(userRepository)
+	userService := user.NewService(userRepository, gds)
 	authService := auth.NewService()
-	campaignService := campaign.NewService(campaignRepository)
+	campaignService := campaign.NewService(campaignRepository, gds)
 	transactionService := transaction.NewService(transactionRepository)
 	paymentService := payment.NewService()
 
@@ -52,7 +68,7 @@ func main() {
 
 	router := gin.Default()
 
-	// CORS
+	// * CORS
 	corsConfig := cors.DefaultConfig()
 	corsConfig.AllowOrigins = []string{"http://127.0.0.1:3000", "https://cg-gofund.herokuapp.com"}
 	corsConfig.AddAllowMethods("OPTIONS")
@@ -60,7 +76,7 @@ func main() {
 	corsConfig.AllowCredentials = true
 	router.Use(cors.New(corsConfig))
 
-	// STATIC FILES
+	// * STATIC FILES
 	router.Static("/images", "./images")
 
 	api := router.Group("/api/v1")
