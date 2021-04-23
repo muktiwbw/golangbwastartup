@@ -16,7 +16,7 @@ require (
 	github.com/leodido/go-urn v1.2.1 // indirect
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
 	github.com/modern-go/reflect2 v1.0.1 // indirect
-	github.com/muktiwbw/gdstorage v0.0.0-20210422180543-d15499c05677 // indirect
+	github.com/muktiwbw/gdstorage v0.0.0-20210422221917-170a48025437 // indirect
 	github.com/veritrans/go-midtrans v0.0.0-20210226064730-b0852df0572b
 	golang.org/x/crypto v0.0.0-20210421170649-83a5a9bb288b
 	golang.org/x/net v0.0.0-20210421230115-4e50805a0758 // indirect

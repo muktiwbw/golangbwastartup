@@ -281,6 +281,10 @@ github.com/muktiwbw/gdstorage v0.0.0-20210422175641-d734a84b4b0b h1:1/KbOwK662LQ
 github.com/muktiwbw/gdstorage v0.0.0-20210422175641-d734a84b4b0b/go.mod h1:Gos+aVeLihE1g0ag0KC3dudJN//sb4uAgG7aIJrCIGw=
 github.com/muktiwbw/gdstorage v0.0.0-20210422180543-d15499c05677 h1:cNFcOOQ+L8BhH2QwxGLhBeQHrucP6dYPmYXejggQ51E=
 github.com/muktiwbw/gdstorage v0.0.0-20210422180543-d15499c05677/go.mod h1:Gos+aVeLihE1g0ag0KC3dudJN//sb4uAgG7aIJrCIGw=
+github.com/muktiwbw/gdstorage v0.0.0-20210422220213-958dc15aceb6 h1:o85/apzt0wdYz3iw3/7ZNEtxSXmW0PqU76wqW9q/1zw=
+github.com/muktiwbw/gdstorage v0.0.0-20210422220213-958dc15aceb6/go.mod h1:Gos+aVeLihE1g0ag0KC3dudJN//sb4uAgG7aIJrCIGw=
+github.com/muktiwbw/gdstorage v0.0.0-20210422221917-170a48025437 h1:yk+4tnIGAIqpEZc7SojdB0x5+Y4wlw/zbh79itPDcoY=
+github.com/muktiwbw/gdstorage v0.0.0-20210422221917-170a48025437/go.mod h1:Gos+aVeLihE1g0ag0KC3dudJN//sb4uAgG7aIJrCIGw=
 github.com/pkg/errors v0.8.1 h1:iURUrRGxPUNPdy5/HRSm+Yj6okJ6UtLINN0Q9M4+h3I=
 github.com/pkg/errors v0.8.1/go.mod h1:bwawxfHBFNV+L2hUp1rHADufV3IMtnDRdf1r5NINEl0=
 github.com/pmezard/go-difflib v1.0.0 h1:4DBwDE0NGyQoBHbLQYPwSUPoCMWR5BEzIk/f1lZbAQM=
